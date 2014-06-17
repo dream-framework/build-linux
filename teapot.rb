@@ -8,8 +8,8 @@ teapot_version "1.0.0"
 define_target "build-linux" do |target|
 	target.provides :linker => "Build/linux"
 	
-	target.provides "Build/darwin" do
-		define Rule, "link.darwin-static-library" do
+	target.provides "Build/linux" do
+		define Rule, "link.linux-static-library" do
 			input :object_files, pattern: /\.o/, multiple: true
 			output :library_file, pattern: /\.a/
 			
@@ -18,18 +18,16 @@ define_target "build-linux" do |target|
 				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
 				
 				run!(
-					environment[:libtool] || "libtool", 
-					"-static",
-					"-o", parameters[:library_file].relative_path,
-					"-c", *object_files,
-					*environment[:ldflags],
-					"-L" + (environment[:install_prefix] + "lib").shortest_path(input_root),
+					environment[:ar] || "ar", 
+					environment[:arflags] || "-cru",
+					parameters[:library_file].relative_path,
+					*object_files,
 					chdir: input_root
 				)
 			end
 		end
 		
-		define Rule, "link.darwin-dynamic-library" do
+		define Rule, "link.linux-dynamic-library" do
 			input :object_files, pattern: /\.o$/, multiple: true
 			output :library_file, pattern: /\.(so)$/
 			
@@ -49,7 +47,7 @@ define_target "build-linux" do |target|
 			end
 		end
 		
-		define Rule, "link.darwin-executable" do
+		define Rule, "link.linux-executable" do
 			input :object_files, pattern: /\.o$/, multiple: true
 			output :executable_file
 			
