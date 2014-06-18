@@ -17,6 +17,8 @@ define_target "build-linux" do |target|
 				input_root = parameters[:library_file].root
 				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
 				
+				fs.rm_f parameters[:library_file]
+				
 				run!(
 					environment[:ar] || "ar", 
 					environment[:arflags] || "-cru",
@@ -27,28 +29,22 @@ define_target "build-linux" do |target|
 			end
 		end
 		
-		define Rule, "link.linux-dynamic-library" do
-			input :object_files, pattern: /\.o$/, multiple: true
-			output :library_file, pattern: /\.(so)$/
-			
-			apply do |parameters|
-				input_root = parameters[:library_file].root
-				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
-				
-				run!(
-					environment[:libtool] || "libtool",
-					"-dynamic",
-					"-o", parameters[:library_file].relative_path,
-					"-c", *object_files,
-					*environment[:ldflags],
-					"-L" + (environment[:install_prefix] + "lib").shortest_path(input_root),
-					chdir: input_root
-				)
-			end
-		end
-		
 		define Rule, "link.linux-executable" do
 			input :object_files, pattern: /\.o$/, multiple: true
+			
+			parameter :library_path, optional: true do |path, arguments|
+				arguments[:library_path] = path || (environment[:install_prefix] + "lib")
+			end
+			
+			input :dependencies, implicit: true do |arguments|
+				# Extract include directories:
+				libraries = environment[:ldflags].collect{|option| option.to_s[/(?<=^-l).+/]}
+				
+				libraries.compact.collect do |name|
+					archive_name = arguments[:library_path] / "lib#{name}.a"
+				end
+			end
+			
 			output :executable_file
 			
 			apply do |parameters|
@@ -56,11 +52,11 @@ define_target "build-linux" do |target|
 				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
 				
 				run!(
-					environment[:cxx],
-					"-o", parameters[:executable_file],
-					*parameters[:object_files],
+					"clang++",
+					"-o", parameters[:executable_file].relative_path,
+					*object_files,
 					*environment[:ldflags],
-					"-L" + (environment[:install_prefix] + "lib").shortest_path(input_root),
+					"-L" + (parameters[:library_path]).shortest_path(input_root),
 					chdir: input_root
 				)
 			end
@@ -69,29 +65,14 @@ define_target "build-linux" do |target|
 		define Rule, "build.static-library" do
 			input :source_files
 			
-			parameter :prefix
+			parameter :prefix, optional: true do |path, arguments|
+				arguments[:prefix] = path || (environment[:install_prefix] + "lib")
+			end
+			
 			parameter :static_library
 			
 			output :library_file, implicit: true do |arguments|
-				arguments[:prefix] + "lib" + "lib#{arguments[:static_library]}.a"
-			end
-			
-			apply do |parameters|
-				# Make sure the output directory exists:
-				fs.mkpath File.dirname(parameters[:library_file])
-				
-				build source_files: parameters[:source_files], library_file: parameters[:library_file]
-			end
-		end
-		
-		define Rule, "build.dynamic-library" do
-			input :source_files
-			
-			parameter :prefix
-			parameter :static_library
-			
-			output :library_file, implicit: true do |arguments|
-				arguments[:prefix] + "lib" + "lib#{arguments[:static_library]}.so"
+				arguments[:prefix] / "lib#{arguments[:static_library]}.a"
 			end
 			
 			apply do |parameters|
@@ -105,11 +86,14 @@ define_target "build-linux" do |target|
 		define Rule, "build.executable" do
 			input :source_files
 			
-			parameter :prefix
+			parameter :prefix, optional: true do |path, arguments|
+				arguments[:prefix] = path || (environment[:install_prefix] + "bin")
+			end
+			
 			parameter :executable
 			
 			output :executable_file, implicit: true do |arguments|
-				arguments[:prefix] + "bin" + arguments[:executable]
+				arguments[:prefix] / arguments[:executable]
 			end
 			
 			apply do |parameters|
@@ -121,13 +105,16 @@ define_target "build-linux" do |target|
 		end
 		
 		define Rule, "run.executable" do
-			input :executable_path, implicit: true do |arguments|
-				arguments[:prefix] + "bin" + arguments[:executable]
-			end
-			
 			parameter :executable
 			
-			parameter :prefix
+			parameter :prefix, optional: true do |path, arguments|
+				arguments[:prefix] = path || (environment[:install_prefix] + "bin")
+			end
+			
+			input :executable_path, implicit: true do |arguments|
+				arguments[:prefix] / arguments[:executable]
+			end
+			
 			parameter :args, optional: true
 			
 			apply do |parameters|
