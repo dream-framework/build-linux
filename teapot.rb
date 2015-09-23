@@ -17,11 +17,11 @@ define_target "build-linux" do |target|
 				input_root = parameters[:library_file].root
 				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
 				
-				fs.rm_f parameters[:library_file]
+				rm parameters[:library_file]
 				
 				run!(
 					environment[:ar] || "ar", 
-					environment[:arflags] || "-cru",
+					environment[:arflags] || "-cr",
 					parameters[:library_file].relative_path,
 					*object_files,
 					chdir: input_root
