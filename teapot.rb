@@ -38,11 +38,7 @@ define_target "build-linux" do |target|
 			
 			input :dependencies, implicit: true do |arguments|
 				# Extract include directories:
-				libraries = environment[:ldflags].collect{|option| option.to_s[/(?<=^-l).+/]}
-				
-				libraries.compact.collect do |name|
-					archive_name = arguments[:library_path] / "lib#{name}.a"
-				end
+				libraries = environment[:ldflags].select{|option| option.kind_of? Files::Path}
 			end
 			
 			output :executable_file
