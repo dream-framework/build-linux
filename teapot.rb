@@ -11,6 +11,7 @@ define_target "build-linux" do |target|
 	target.provides "Build/linux" do
 		define Rule, "link.linux-static-library" do
 			input :object_files, pattern: /\.o/, multiple: true
+			
 			output :library_file, pattern: /\.a/
 			
 			apply do |parameters|
@@ -33,11 +34,11 @@ define_target "build-linux" do |target|
 			input :object_files, pattern: /\.o$/, multiple: true
 			
 			parameter :library_path, optional: true do |path, arguments|
-				arguments[:library_path] = path || (environment[:install_prefix] + "lib")
+				arguments[:library_path] = environment[:build_prefix] + path + "lib"
 			end
 			
 			input :dependencies, implicit: true do |arguments|
-				# Extract include directories:
+				# Extract library paths:
 				libraries = environment[:ldflags].select{|option| option.kind_of? Files::Path}
 			end
 			
@@ -52,7 +53,7 @@ define_target "build-linux" do |target|
 					"-o", parameters[:executable_file].relative_path,
 					*object_files,
 					*environment[:ldflags],
-					"-L" + (parameters[:library_path]).shortest_path(input_root),
+					# "-L" + parameters[:library_path].shortest_path(input_root),
 					chdir: input_root
 				)
 			end
@@ -62,20 +63,20 @@ define_target "build-linux" do |target|
 			input :source_files
 			
 			parameter :prefix, optional: true do |path, arguments|
-				arguments[:prefix] = path || (environment[:install_prefix] + "lib")
+				arguments[:prefix] = environment[:build_prefix] + "lib"
 			end
 			
 			parameter :static_library
 			
 			output :library_file, implicit: true do |arguments|
-				arguments[:prefix] / "lib#{arguments[:static_library]}.a"
+				arguments[:prefix] / "#{arguments[:static_library]}.a"
 			end
 			
 			apply do |parameters|
 				# Make sure the output directory exists:
 				fs.mkpath File.dirname(parameters[:library_file])
 				
-				build source_files: parameters[:source_files], library_file: parameters[:library_file]
+				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], library_file: parameters[:library_file]
 			end
 		end
 		
@@ -83,7 +84,7 @@ define_target "build-linux" do |target|
 			input :source_files
 			
 			parameter :prefix, optional: true do |path, arguments|
-				arguments[:prefix] = path || (environment[:install_prefix] + "bin")
+				arguments[:prefix] = environment[:build_prefix] + path + 'bin'
 			end
 			
 			parameter :executable
@@ -96,7 +97,7 @@ define_target "build-linux" do |target|
 				# Make sure the output directory exists:
 				fs.mkpath File.dirname(parameters[:executable_file])
 				
-				build source_files: parameters[:source_files], executable_file: parameters[:executable_file]
+				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], executable_file: parameters[:executable_file]
 			end
 		end
 		
@@ -104,7 +105,7 @@ define_target "build-linux" do |target|
 			parameter :executable
 			
 			parameter :prefix, optional: true do |path, arguments|
-				arguments[:prefix] = path || (environment[:install_prefix] + "bin")
+				arguments[:prefix] = environment[:build_prefix] + path + 'bin'
 			end
 			
 			input :executable_file, implicit: true do |arguments|
