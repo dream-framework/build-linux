@@ -63,7 +63,7 @@ define_target "build-linux" do |target|
 			input :source_files
 			
 			parameter :prefix, optional: true do |path, arguments|
-				arguments[:prefix] = environment[:build_prefix] + "lib"
+				arguments[:prefix] = environment[:build_prefix] + path
 			end
 			
 			parameter :static_library
