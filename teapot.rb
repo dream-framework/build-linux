@@ -33,10 +33,6 @@ define_target "build-linux" do |target|
 		define Rule, "link.linux-executable" do
 			input :object_files, pattern: /\.o$/, multiple: true
 			
-			parameter :library_path, optional: true do |path, arguments|
-				arguments[:library_path] = environment[:build_prefix] + path + "lib"
-			end
-			
 			input :dependencies, implicit: true do |arguments|
 				# Extract library paths:
 				libraries = environment[:ldflags].select{|option| option.kind_of? Files::Path}
@@ -53,7 +49,6 @@ define_target "build-linux" do |target|
 					"-o", parameters[:executable_file].relative_path,
 					*object_files,
 					*environment[:ldflags],
-					# "-L" + parameters[:library_path].shortest_path(input_root),
 					chdir: input_root
 				)
 			end
