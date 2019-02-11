@@ -69,7 +69,7 @@ define_target "build-linux" do |target|
 			
 			apply do |parameters|
 				# Make sure the output directory exists:
-				fs.mkpath File.dirname(parameters[:library_file])
+				mkpath File.dirname(parameters[:library_file])
 				
 				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], library_file: parameters[:library_file]
 			end
@@ -90,7 +90,7 @@ define_target "build-linux" do |target|
 			
 			apply do |parameters|
 				# Make sure the output directory exists:
-				fs.mkpath File.dirname(parameters[:executable_file])
+				mkpath File.dirname(parameters[:executable_file])
 				
 				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], executable_file: parameters[:executable_file]
 			end
