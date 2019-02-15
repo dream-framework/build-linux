@@ -3,9 +3,11 @@
 #  This file is part of the "Teapot" project, and is released under the MIT license.
 #
 
-teapot_version "1.0.0"
+teapot_version "3.0"
 
 define_target "build-linux" do |target|
+	target.depends :platform, public: true
+	
 	target.provides :linker => "Build/linux"
 	target.provides :executor => "Build/linux"
 	
