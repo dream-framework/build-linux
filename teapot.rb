@@ -7,6 +7,7 @@ teapot_version "1.0.0"
 
 define_target "build-linux" do |target|
 	target.provides :linker => "Build/linux"
+	target.provides :executor => "Build/linux"
 	
 	target.provides "Build/linux" do
 		define Rule, "link.linux-static-library" do
