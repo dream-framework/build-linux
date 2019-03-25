@@ -99,7 +99,7 @@ define_target "build-linux" do |target|
 		end
 		
 		define Rule, "run.executable" do
-			parameter :executable
+			parameter :executable, optional: true
 			
 			parameter :prefix, implicit: true do |arguments|
 				arguments[:prefix] = environment[:build_prefix] + environment.checksum
