@@ -106,7 +106,11 @@ define_target "build-linux" do |target|
 			end
 			
 			input :executable_file, implicit: true do |arguments|
-				arguments[:prefix] / arguments[:executable]
+				if executable_path = arguments[:executable_path]
+					executable_path
+				else
+					arguments[:prefix] / arguments[:executable]
+				end
 			end
 			
 			parameter :arguments, optional: true
@@ -114,7 +118,8 @@ define_target "build-linux" do |target|
 			apply do |parameters|
 				run!(
 					parameters[:executable_file],
-					*parameters[:arguments]
+					*parameters[:arguments],
+					chdir: parameters[:prefix]
 				)
 			end
 		end
