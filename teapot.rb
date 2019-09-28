@@ -99,18 +99,10 @@ define_target "build-linux" do |target|
 		end
 		
 		define Rule, "run.executable" do
-			parameter :executable, optional: true
-			
+			parameter :executable_file
+						
 			parameter :prefix, implicit: true do |arguments|
-				arguments[:prefix] = environment[:build_prefix] + environment.checksum
-			end
-			
-			input :executable_file, implicit: true do |arguments|
-				if executable_path = arguments[:executable_path]
-					executable_path
-				else
-					arguments[:prefix] / arguments[:executable]
-				end
+				arguments[:prefix] ||= File.dirname(arguments[:executable_file])
 			end
 			
 			parameter :arguments, optional: true
