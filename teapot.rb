@@ -9,7 +9,6 @@ define_target "build-linux" do |target|
 	target.depends :platform, public: true
 	
 	target.provides :linker => "Build/linux"
-	target.provides :executor => "Build/linux"
 	
 	target.provides "Build/linux" do
 		define Rule, "link.linux-static-library" do
@@ -95,24 +94,6 @@ define_target "build-linux" do |target|
 				mkpath File.dirname(parameters[:executable_file])
 				
 				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], executable_file: parameters[:executable_file]
-			end
-		end
-		
-		define Rule, "run.executable" do
-			input :executable_file
-			
-			parameter :prefix, implicit: true do |arguments|
-				arguments[:prefix] ||= File.dirname(arguments[:executable_file])
-			end
-			
-			parameter :arguments, optional: true
-			
-			apply do |parameters|
-				run!(
-					parameters[:executable_file],
-					*parameters[:arguments],
-					chdir: parameters[:prefix]
-				)
 			end
 		end
 	end
