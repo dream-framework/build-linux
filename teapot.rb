@@ -32,6 +32,26 @@ define_target "build-linux" do |target|
 			end
 		end
 		
+		define Rule, "link.linux-dynamic-library" do
+			input :object_files, pattern: /\.o$/, multiple: true
+			
+			output :library_file, pattern: /\.so$/
+			
+			apply do |parameters|
+				input_root = parameters[:library_file].root
+				object_files = parameters[:object_files].collect{|path| path.shortest_path(input_root)}
+				
+				run!(
+					environment[:ld] || "clang++",
+					"-shared",
+					"-o", parameters[:library_file].relative_path,
+					*object_files,
+					*environment[:ldflags],
+					chdir: input_root
+				)
+			end
+		end
+		
 		define Rule, "link.linux-executable" do
 			input :object_files, pattern: /\.o$/, multiple: true
 			
@@ -66,6 +86,27 @@ define_target "build-linux" do |target|
 			
 			output :library_file, implicit: true do |arguments|
 				arguments[:prefix] / "#{arguments[:static_library]}.a"
+			end
+			
+			apply do |parameters|
+				# Make sure the output directory exists:
+				mkpath File.dirname(parameters[:library_file])
+				
+				build build_prefix: parameters[:prefix], source_files: parameters[:source_files], library_file: parameters[:library_file]
+			end
+		end
+		
+		define Rule, "build.dynamic-library" do
+			input :source_files
+			
+			parameter :prefix, implicit: true do |arguments|
+				arguments[:prefix] = environment[:build_prefix] + environment.checksum
+			end
+			
+			parameter :dynamic_library
+			
+			output :library_file, implicit: true do |arguments|
+				arguments[:prefix] / "#{arguments[:dynamic_library]}.so"
 			end
 			
 			apply do |parameters|
