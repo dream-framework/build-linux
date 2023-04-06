@@ -6,8 +6,6 @@
 teapot_version "3.0"
 
 define_target "build-linux" do |target|
-	target.depends :platform, public: true
-	
 	target.provides :linker => "Build/linux"
 	
 	target.provides "Build/linux" do
